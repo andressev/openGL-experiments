@@ -10,6 +10,7 @@ endif()
 target_include_directories(learnOpenGL PRIVATE
     "../external/glfw/include"
     "../external/Glad/include"
+    "../external/glm"
 )
 
 target_link_libraries(learnOpenGL PRIVATE
