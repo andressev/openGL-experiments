@@ -10,6 +10,23 @@
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window, glm::vec4& color);
+void CheckForErrors(unsigned int shader); 
+
+
+const char* vertexShaderSource = "#version 330 core\n"
+"layout (location = 0) in vec3 aPos;\n"
+"void main()\n"
+"{\n"
+"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"}\0";
+
+const char* fragmentShaderSource = "#version 330 core\n"
+"out vec4 FragColor;\n"
+"void main()\n"
+"{\n"
+"   FragColor = vec4(1.0f, .5f, .3f,1.0f );\n"
+"}\0";
+
 int main()
 {
     glfwInit();
@@ -35,7 +52,34 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     glm::vec4 color{ 0.2f, 0.3f, 0.3f, 1.0f };
+    
+    //VERTEX SHADER
+    unsigned int vertexShader;
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, nullptr);
+    glCompileShader(vertexShader);
 
+    CheckForErrors(vertexShader);
+
+    //FRAGMENT SHADER
+    unsigned int fragmentShader;
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, nullptr);
+    glCompileShader(fragmentShader);
+    CheckForErrors(fragmentShader); 
+
+    //SHADER PROGRAM
+    unsigned int shaderProgram;
+    shaderProgram = glCreateProgram();
+
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    CheckForErrors(shaderProgram); 
+
+    glDeleteShader(vertexShader); 
+    glDeleteShader(fragmentShader);
 
     while (!glfwWindowShouldClose(window)) {
         glClearColor(color.r, color.g, color.r, 1.0f);
@@ -66,5 +110,17 @@ void processInput(GLFWwindow* window, glm::vec4& color) {
     if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
         color.r = 1.0f;
     }
+}
+
+void CheckForErrors(unsigned int shader) {
+    int succes;
+    char infoLog[512];
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &succes);
+
+    if (!succes) {
+        glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+        std::cout << "ERROR::SHADER::COMPILATION::FAILED\n" << infoLog << std::endl;
+    }
+
 }
 
