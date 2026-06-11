@@ -41,6 +41,7 @@ int main()
         return -1;
     }
     glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); //window resize callback
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
@@ -49,9 +50,7 @@ int main()
 
     glViewport(0,0,1000,700);
 
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    glm::vec4 color{ 0.2f, 0.3f, 0.3f, 1.0f };
     
     //VERTEX SHADER
     unsigned int vertexShader;
@@ -77,16 +76,81 @@ int main()
     glLinkProgram(shaderProgram);
 
     CheckForErrors(shaderProgram); 
-
+    
     glDeleteShader(vertexShader); 
     glDeleteShader(fragmentShader);
+    
+   
+
+    //setup vertex data
+    float tr1[] = {
+        -0.5f, -0.5f, 0.0f, 
+         -0.5f,  0.5f, 0.0f, 
+         0.0f, -0.5f, 0.0f, 
+         
+
+    };
+    float tr2[] = {
+         -0.4f,  0.5f, 0.0f, 
+         0.5f,  0.5f, 0.0f,
+         0.5f, -0.4f,0.0f,
+    };
+    unsigned int indices[] = {  // note that we start from 0!
+    0, 1, 3,   // first triangle
+    0, 2, 3    // second triangle
+    };
+
+
+    //Setting up 2 different VAO's
+
+    //VAO 1
+    unsigned int VBO1, VAO1;
+    glGenVertexArrays(1, &VAO1);
+    glGenBuffers(1, &VBO1);
+    glBindVertexArray(VAO1); //we bind the vao1
+    glBindBuffer(GL_ARRAY_BUFFER, VBO1);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(tr1), tr1, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0); //enables location=0 for the vertex shader 
+    glBindBuffer(GL_ARRAY_BUFFER,VBO1);
+   
+
+    //VAO 2 
+    unsigned int VBO2, VAO2;
+    glGenVertexArrays(1, &VAO2);
+    glGenBuffers(1, &VBO2);
+    glBindVertexArray(VAO2); //we bind the vao2
+    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(tr2), tr2, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0); //enables location=0 for the vertex shader 
+    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+
+
+    
+
+  
+
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //render wire frame
+
+
+    glm::vec4 color{ 0.2f, 0.3f, 0.3f, 1.0f };
 
     while (!glfwWindowShouldClose(window)) {
+        processInput(window, color);
+
         glClearColor(color.r, color.g, color.r, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        glUseProgram(shaderProgram);
+        glBindVertexArray(VAO2);
+        glDrawArrays(GL_TRIANGLES, 0, 6); //the amount of vertices drawn starts at cero finishes at 6
+        
+        glBindVertexArray(VAO1);
+        glDrawArrays(GL_TRIANGLES,0, 6); //the amount of vertices drawn starts at cero finishes at 6
+
         
 
-        processInput(window, color);
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
