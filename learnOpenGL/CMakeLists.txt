@@ -11,6 +11,7 @@ target_include_directories(learnOpenGL PRIVATE
     "../external/Glad/include"
     "../external/glm"
     "../custom"
+    "../external/stb_image"
 )
 
 target_link_libraries(learnOpenGL PRIVATE
@@ -20,4 +21,5 @@ target_link_libraries(learnOpenGL PRIVATE
 
 target_compile_definitions(learnOpenGL PRIVATE
     SHADER_DIR="${CMAKE_CURRENT_SOURCE_DIR}/shaders/"
+    RESOURCES_DIR="${CMAKE_CURRENT_SOURCE_DIR}/resources/"
 )

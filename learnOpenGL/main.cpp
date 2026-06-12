@@ -1,5 +1,4 @@
 // CMakeProjectTest.cpp : Defines the entry point for the application.
-//
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -8,6 +7,9 @@
 #include <iostream>
 #include <format>
 #include <shader.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -46,36 +48,74 @@ int main()
 
     //setup vertex data
     float vertices[] = {
-        // positions         // colors
-         0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // bottom right
-        -0.5f, -0.5f, -0.0f,  0.0f, 1.0f, 0.0f,   // bottom left
-         0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // top 
+        // positions          // colors           // texture coords
+         0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+         0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
+    };
+
+    unsigned int indices[] = {
+        0, 1, 3, // first triangle
+        1, 2, 3  // second triangle
     };
 
 
 
 
     //VAO 1
-    unsigned int VBO1, VAO1;
+    unsigned int VBO1, VAO1, EBO;
     glGenVertexArrays(1, &VAO1);
     glGenBuffers(1, &VBO1);
+    glGenBuffers(1, &EBO);
+
     glBindVertexArray(VAO1); //we bind the vao1
     glBindBuffer(GL_ARRAY_BUFFER, VBO1);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
     //vertex atrrib
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0); //enables location=0 for the vertex shader 
 
     //color atribb
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),(void*)(3* sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float),(void*)(3* sizeof(float)));
     glEnableVertexAttribArray(1); //enables location=0 for the vertex shader 
 
+    //texCoords
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2); //enables location=0 for the vertex shader 
 
-    glBindVertexArray(VAO1);
+
+    
    
+    //texture 
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load and generate the texture
+    
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load(RESOURCES_DIR"container.jpg", &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
 
-   
-
+    
 
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //render wire frame
 
@@ -89,18 +129,8 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         ourShader.use();
-        float time = glfwGetTime();
-        glm::vec2 displacement(sin(time), cos(time));
-
-        glm::mat4 transform = glm::mat4(1.0f);
-        transform = glm::rotate(transform, (float)time, glm::normalize(glm::vec3(displacement, -2.f)));
-
-        displacement *= 0.0;
-
-        ourShader.setMat4("transform", transform);
-        ourShader.setVec2("displacement", displacement);
-
-        glDrawArrays(GL_TRIANGLES,0, 3); //the amount of vertices drawn starts at cero finishes at n
+       
+        glDrawElements(GL_TRIANGLES,sizeof(indices), GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
 
        
         glfwSwapBuffers(window);
