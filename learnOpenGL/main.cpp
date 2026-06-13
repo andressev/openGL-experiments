@@ -10,6 +10,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
+#include <shapes.h>
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -50,26 +51,15 @@ int main()
     glfwGetFramebufferSize(window,&width,&height);
     ourShader.setVec2("resolution", float(width),float(height));
 
-
+    int sector = 10;
+    int stack = 10;
+    float radius = 0.5f;
     
-   
-
-    //setup vertex data
-    float vertices[] = {
-        // positions          // colors           // texture coords
-         0.9f,  0.9f, 0.0f,   1.0f, 0.0f, 0.0f,    // top right
-         0.9f, -0.9f, 0.0f,   0.0f, 1.0f, 0.0f,   // bottom right
-        -0.9f, -0.9f, 0.0f,   0.0f, 0.0f, 1.0f,   // bottom left
-        -0.9f,  0.9f, 0.0f,   1.0f, 1.0f, 0.0f    // top left 
-    };
-
-    unsigned int indices[] = {
-        0, 1, 3, // first triangle
-        1, 2, 3  // second triangle
-    };
-
-
-
+    int vertexCount;
+    float* vertices = Shapes::createSphereVertices(sector, stack,radius,vertexCount);
+    int indicesCount;
+    unsigned int* indices = Shapes::createSphereIndices(sector,stack,indicesCount);
+    
 
     //VAO 1
     unsigned int VBO1, VAO1, EBO;
@@ -79,18 +69,18 @@ int main()
 
     glBindVertexArray(VAO1); //we bind the vao1
     glBindBuffer(GL_ARRAY_BUFFER, VBO1);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertexCount*sizeof(float), vertices, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesCount*sizeof(unsigned int), indices, GL_STATIC_DRAW);
 
     //vertex atrrib
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0); //enables location=0 for the vertex shader 
 
-    //color atribb
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),(void*)(3* sizeof(float)));
-    glEnableVertexAttribArray(1); //enables location=0 for the vertex shader 
+    ////color atribb
+    //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),(void*)(3* sizeof(float)));
+    //glEnableVertexAttribArray(1); //enables location=0 for the vertex shader 
 
 
     
@@ -99,10 +89,11 @@ int main()
 
     
 
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //render wire frame
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //render wire frame
 
 
     glm::vec4 color{ 0.2f, 0.3f, 0.3f, 1.0f };
+    glm::mat4 transform = glm::mat4(1.0f);
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window, color);
@@ -111,8 +102,15 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         ourShader.use();
+        
+        //transformMat4
+        float time = glfwGetTime();
+        transform = glm::rotate(transform, glm::radians(time*0.0001f), glm::vec3(1.f));
+        ourShader.setMat4("transform", transform);
+        
+
        
-        glDrawElements(GL_TRIANGLES,sizeof(indices), GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
+        glDrawElements(GL_TRIANGLES,indicesCount, GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
 
        
         glfwSwapBuffers(window);
@@ -144,16 +142,7 @@ void processInput(GLFWwindow* window, glm::vec4& color) {
 }
 
 
-void CheckForErrors(unsigned int shader) {
-    int succes;
-    char infoLog[512];
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &succes);
 
-    if (!succes) {
-        glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-        std::cout << "ERROR::SHADER::COMPILATION::FAILED\n" << infoLog << std::endl;
-    }
 
-}
 
 
