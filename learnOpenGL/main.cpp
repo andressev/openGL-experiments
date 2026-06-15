@@ -44,56 +44,76 @@ int main()
     glViewport(0,0,1000,700);
 
 
-    Shader ourShader(SHADER_DIR"vertex.glsl", SHADER_DIR"fragment.glsl");
-    shaderPtr = &ourShader;
-    ourShader.use();
+    Shader shader(SHADER_DIR"vertex.glsl", SHADER_DIR"fragment.glsl");
+    shaderPtr = &shader;
+    shader.use();
     int width, height;
     glfwGetFramebufferSize(window,&width,&height);
-    ourShader.setVec2("resolution", float(width),float(height));
+    shader.setVec2("resolution", float(width),float(height));
 
-    int sector = 10;
-    int stack = 10;
+    int sector = 20;
+    int stack = 20;
     float radius = 0.5f;
     
     int vertexCount;
-    float* vertices = Shapes::createSphereVertices(sector, stack,radius,vertexCount);
+    float* vertices = Shapes::sphereVertices(sector, stack,radius,vertexCount);
     int indicesCount;
-    unsigned int* indices = Shapes::createSphereIndices(sector,stack,indicesCount);
+    unsigned int* indices = Shapes::sphereIndices(sector,stack,indicesCount);
     
 
     //VAO 1
-    unsigned int VBO1, VAO1, EBO;
+    unsigned int VBO1, VAO1, EBO1;
     glGenVertexArrays(1, &VAO1);
     glGenBuffers(1, &VBO1);
-    glGenBuffers(1, &EBO);
+    glGenBuffers(1, &EBO1);
 
     glBindVertexArray(VAO1); //we bind the vao1
     glBindBuffer(GL_ARRAY_BUFFER, VBO1);
     glBufferData(GL_ARRAY_BUFFER, vertexCount*sizeof(float), vertices, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO1);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesCount*sizeof(unsigned int), indices, GL_STATIC_DRAW);
 
     //vertex atrrib
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0); //enables location=0 for the vertex shader 
 
-    ////color atribb
-    //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float),(void*)(3* sizeof(float)));
-    //glEnableVertexAttribArray(1); //enables location=0 for the vertex shader 
 
+    //VAO 2 plane
+    unsigned int VBO2, VAO2, EBO2;
+    glGenVertexArrays(1, &VAO2);
+    glGenBuffers(1, &VBO2);
+    glGenBuffers(1, &EBO2);
+
+    float* planeVertices = Shapes::planeVertices();
+    unsigned int* planeIndices = Shapes::planeIndices();
+    
+    glBindVertexArray(VAO2); //we bind the vao1
+    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+    glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), planeVertices, GL_STATIC_DRAW);
+    
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO2);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), planeIndices, GL_STATIC_DRAW);
+    
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0); //enables location=0 for the vertex shader 
 
     
-   
-    
 
     
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //render wire frame
+    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //render wire frame
 
 
-    glm::vec4 color{ 0.2f, 0.3f, 0.3f, 1.0f };
-    glm::mat4 transform = glm::mat4(1.0f);
+    glm::vec4 color{ 0.f, 0.f, 0.f, 1.0f };
+    glm::mat4 transformSphere = glm::mat4(1.0f);
+    glm::mat4 transformPlane = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f));
+    transformPlane = glm::translate(transformPlane, glm::vec3(0.f,-.3f,0.f));
+    
+
+    transformPlane = glm::rotate(transformPlane, glm::radians(89.f), glm::vec3(1.f,0.0f,0.0f));
+
+    float lastTime = 0.0f;
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window, color);
@@ -101,16 +121,23 @@ int main()
         glClearColor(color.r, color.g, color.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        ourShader.use();
+        shader.use();
         
-        //transformMat4
-        float time = glfwGetTime();
-        transform = glm::rotate(transform, glm::radians(time*0.0001f), glm::vec3(1.f));
-        ourShader.setMat4("transform", transform);
-        
+        //transformMat4 for Sphere
+        glBindVertexArray(VAO1);
 
-       
+        float time = glfwGetTime();
+        float deltaTime = time - lastTime;
+        lastTime = time;
+        transformSphere = glm::rotate(transformSphere,deltaTime, glm::vec3(1.f));
+        shader.setMat4("transform", transformSphere);
         glDrawElements(GL_TRIANGLES,indicesCount, GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
+
+        glBindVertexArray(VAO2);
+        shader.setMat4("transform", transformPlane);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
+
+        
 
        
         glfwSwapBuffers(window);

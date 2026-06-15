@@ -9,7 +9,7 @@ class Shapes
 {
 public:
     // ------------------------------------------------------------------------
-    static float* createSphereVertices(int sectorCount, int stackCount, float radius, int& outCount)
+    static float* sphereVertices(int sectorCount, int stackCount, float radius, int& outCount)
     {
         std::vector<float> temp;
 
@@ -58,7 +58,7 @@ public:
         return arr;
     }
     // ------------------------------------------------------------------------
-    static unsigned int* createSphereIndices(int sectorCount, int stackCount, int& outCount)
+    static unsigned int* sphereIndices(int sectorCount, int stackCount, int& outCount)
     {
         std::vector<unsigned int> temp;
 
@@ -90,7 +90,22 @@ public:
         std::copy(temp.begin(), temp.end(), arr);
         return arr;
     }
-
+    static float* planeVertices() {
+        static float vertices[] = {
+             0.5f,  0.5f, 0.0f,
+             0.5f, -0.5f, 0.0f,
+            -0.5f, -0.5f, 0.0f,
+            -0.5f,  0.5f, 0.0f
+        };
+        return vertices;
+    }
+    static unsigned int* planeIndices() {
+        static unsigned int indices[] = {
+            0,1,2,
+            0,2,3
+        };
+        return indices;
+    }
     // ------------------------------------------------------------------------
     static std::vector<float> createCubeVertices()
     {
