@@ -19,8 +19,8 @@ void CheckForErrors(unsigned int shader);
 
 Shader* shaderPtr=nullptr;
 
-const unsigned int SRC_WIDTH = 800;
-const unsigned int SRC_HEIGHT = 600;
+unsigned int SRC_WIDTH = 800;
+unsigned int SRC_HEIGHT = 600;
 
 
 int main()
@@ -44,7 +44,7 @@ int main()
         return -1;
     }
 
-    glViewport(0,0,1000,700);
+    glViewport(0,0,SRC_WIDTH,SRC_HEIGHT);
 
 
     Shader shader(SHADER_DIR"vertex.glsl", SHADER_DIR"fragment.glsl");
@@ -109,12 +109,21 @@ int main()
 
 
     glm::vec4 color{ 0.f, 0.f, 0.f, 1.0f };
-    glm::mat4 transformSphere = glm::mat4(1.0f);
-    glm::mat4 transformPlane = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
-    transformPlane = glm::translate(transformPlane, glm::vec3(0.f,0.f,-3.f));
-    transformPlane = glm::rotate(transformPlane, glm::radians(-55.f), glm::vec3(1.f,0.0f,.0f));
-    glm::mat4 projection=glm::perspective(glm::radians(45.0f), (float)SRC_WIDTH / (float)SRC_HEIGHT, 0.1f, 100.0f);
-    transformPlane = projection * transformPlane;
+
+
+    glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
+    glm::mat4 view= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+    model = glm::rotate(model, glm::radians(-55.f), glm::vec3(1.f,0.0f,.0f));
+    glm::mat4 projection=glm::perspective(glm::radians(75.0f), (float)SRC_WIDTH / (float)SRC_HEIGHT, 0.1f, 100.0f);
+    
+    //shpere
+    glm::mat4 modelSphere = glm::mat4(1.0f);
+    
+    shader.use();
+    shader.setMat4("projection", projection);
+    shader.setMat4("view", view);
+    
+    
 
     float lastTime = 0.0f;
 
@@ -123,8 +132,10 @@ int main()
 
         glClearColor(color.r, color.g, color.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
-
         shader.use();
+
+        //send shared uniforms
+        shader.setMat4("model", model);
         
         //transformMat4 for Sphere
         glBindVertexArray(VAO1);
@@ -132,12 +143,17 @@ int main()
         float time = glfwGetTime();
         float deltaTime = time - lastTime;
         lastTime = time;
-        transformSphere = glm::rotate(transformSphere,deltaTime, glm::vec3(1.f));
-        shader.setMat4("transform", transformSphere);
-        //glDrawElements(GL_TRIANGLES,indicesCount, GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
+        
+        projection=glm::perspective(glm::radians(55.f), (float)SRC_WIDTH / (float)SRC_HEIGHT, 0.1f, 100.0f);
+        shader.setMat4("projection", projection);
+
+
+        modelSphere = glm::translate(model,glm::vec3(0.f,1.f,0.f));
+        shader.setMat4("model", modelSphere);
+        glDrawElements(GL_TRIANGLES,indicesCount, GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
 
         glBindVertexArray(VAO2);
-        shader.setMat4("transform", transformPlane);
+        shader.setMat4("model", glm::scale(model, glm::vec3(3.f)));
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
 
         
@@ -157,9 +173,12 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
     //std::string s = std::format("Readjusted size to {}x{}",width, height);
     //std::cout << s << "\n";
+    SRC_WIDTH = width;
+    SRC_HEIGHT = height;
 
     shaderPtr->use();
     shaderPtr->setVec2("resolution", float(width),float(height));
+    shaderPtr->setMat4("projection", glm::perspective(glm::radians(45.0f), (float)SRC_WIDTH / (float)SRC_HEIGHT, 0.1f, 100.0f));
 }
 void processInput(GLFWwindow* window, glm::vec4& color) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
