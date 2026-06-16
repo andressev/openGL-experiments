@@ -19,6 +19,9 @@ void CheckForErrors(unsigned int shader);
 
 Shader* shaderPtr=nullptr;
 
+const unsigned int SRC_WIDTH = 800;
+const unsigned int SRC_HEIGHT = 600;
+
 
 int main()
 {
@@ -27,7 +30,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(1000, 700, "OpenGL Window", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(SRC_WIDTH, SRC_HEIGHT, "OpenGL Window", nullptr, nullptr);
     if (window == nullptr) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -107,11 +110,11 @@ int main()
 
     glm::vec4 color{ 0.f, 0.f, 0.f, 1.0f };
     glm::mat4 transformSphere = glm::mat4(1.0f);
-    glm::mat4 transformPlane = glm::scale(glm::mat4(1.0f), glm::vec3(2.0f));
-    transformPlane = glm::translate(transformPlane, glm::vec3(0.f,-.3f,0.f));
-    
-
-    transformPlane = glm::rotate(transformPlane, glm::radians(89.f), glm::vec3(1.f,0.0f,0.0f));
+    glm::mat4 transformPlane = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
+    transformPlane = glm::translate(transformPlane, glm::vec3(0.f,0.f,-3.f));
+    transformPlane = glm::rotate(transformPlane, glm::radians(-55.f), glm::vec3(1.f,0.0f,.0f));
+    glm::mat4 projection=glm::perspective(glm::radians(45.0f), (float)SRC_WIDTH / (float)SRC_HEIGHT, 0.1f, 100.0f);
+    transformPlane = projection * transformPlane;
 
     float lastTime = 0.0f;
 
@@ -131,7 +134,7 @@ int main()
         lastTime = time;
         transformSphere = glm::rotate(transformSphere,deltaTime, glm::vec3(1.f));
         shader.setMat4("transform", transformSphere);
-        glDrawElements(GL_TRIANGLES,indicesCount, GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
+        //glDrawElements(GL_TRIANGLES,indicesCount, GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
 
         glBindVertexArray(VAO2);
         shader.setMat4("transform", transformPlane);
