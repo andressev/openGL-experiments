@@ -17,10 +17,19 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window, glm::vec4& color);
 void CheckForErrors(unsigned int shader); 
 
+glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
+glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
 Shader* shaderPtr=nullptr;
 
 unsigned int SRC_WIDTH = 800;
 unsigned int SRC_HEIGHT = 600;
+
+
+float deltaTime = 0.0f;
+float lastTime = 0.0f;
+
 
 
 int main()
@@ -113,7 +122,7 @@ int main()
 
     glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
     glm::mat4 view= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
-    model = glm::rotate(model, glm::radians(-55.f), glm::vec3(1.f,0.0f,.0f));
+    model = glm::rotate(model, glm::radians(-80.f), glm::vec3(1.f,0.0f,.0f));
     glm::mat4 projection=glm::perspective(glm::radians(75.0f), (float)SRC_WIDTH / (float)SRC_HEIGHT, 0.1f, 100.0f);
     
     //shpere
@@ -125,7 +134,9 @@ int main()
     
     
 
-    float lastTime = 0.0f;
+    
+
+
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window, color);
@@ -134,14 +145,20 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
         shader.use();
 
-        //send shared uniforms
-        shader.setMat4("model", model);
+        
+        float camX = sin(glfwGetTime()) * 3.f;
+        float camZ = cos(glfwGetTime()) * 3.f;
+        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+
+        shader.setMat4("view",view);
+        
+        
         
         //transformMat4 for Sphere
         glBindVertexArray(VAO1);
 
         float time = glfwGetTime();
-        float deltaTime = time - lastTime;
+        deltaTime = time - lastTime;
         lastTime = time;
         
         projection=glm::perspective(glm::radians(55.f), (float)SRC_WIDTH / (float)SRC_HEIGHT, 0.1f, 100.0f);
@@ -188,6 +205,16 @@ void processInput(GLFWwindow* window, glm::vec4& color) {
     if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
         color.r = 1.0f;
     }
+
+    const float cameraSpeed = 1.5f*deltaTime; // adjust accordingly
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        cameraPos += cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        cameraPos -= cameraSpeed * cameraFront;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 }
 
 
