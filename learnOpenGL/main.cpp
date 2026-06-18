@@ -7,6 +7,7 @@
 #include <iostream>
 #include <format>
 #include <shader.h>
+#include <camera.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
@@ -17,18 +18,12 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window, glm::vec4& color);
 void CheckForErrors(unsigned int shader); 
 
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
 Shader* shaderPtr=nullptr;
 
 unsigned int SRC_WIDTH = 800;
 unsigned int SRC_HEIGHT = 600;
 
 
-float deltaTime = 0.0f;
-float lastTime = 0.0f;
 
 
 
@@ -120,6 +115,9 @@ int main()
     glm::vec4 color{ 0.f, 0.f, 0.f, 1.0f };
 
 
+    Camera camera;
+    
+
     glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
     glm::mat4 view= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
     model = glm::rotate(model, glm::radians(-80.f), glm::vec3(1.f,0.0f,.0f));
@@ -146,9 +144,8 @@ int main()
         shader.use();
 
         
-        float camX = sin(glfwGetTime()) * 3.f;
-        float camZ = cos(glfwGetTime()) * 3.f;
-        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        camera.processInput(window);
+        view = camera.getViewMatrix();
 
         shader.setMat4("view",view);
         
@@ -157,10 +154,6 @@ int main()
         //transformMat4 for Sphere
         glBindVertexArray(VAO1);
 
-        float time = glfwGetTime();
-        deltaTime = time - lastTime;
-        lastTime = time;
-        
         projection=glm::perspective(glm::radians(55.f), (float)SRC_WIDTH / (float)SRC_HEIGHT, 0.1f, 100.0f);
         shader.setMat4("projection", projection);
 
@@ -206,15 +199,6 @@ void processInput(GLFWwindow* window, glm::vec4& color) {
         color.r = 1.0f;
     }
 
-    const float cameraSpeed = 1.5f*deltaTime; // adjust accordingly
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cameraPos += cameraSpeed * cameraFront;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos -= cameraSpeed * cameraFront;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 }
 
 

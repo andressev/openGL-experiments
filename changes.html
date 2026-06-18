@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Camera Refactor — Change Log</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #c9d1d9;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      color: #e6edf3;
+      margin-bottom: 0.25rem;
+    }
+
+    .subtitle {
+      color: #8b949e;
+      font-size: 0.9rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .section {
+      margin-bottom: 2.5rem;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #58a6ff;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .file-label {
+      display: inline-block;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      font-size: 0.85rem;
+      font-family: 'Consolas', monospace;
+      color: #e6edf3;
+      margin-bottom: 1rem;
+    }
+
+    .file-label.new::after {
+      content: 'NEW';
+      margin-left: 0.75rem;
+      font-size: 0.7rem;
+      background: #1f6feb;
+      color: #fff;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      vertical-align: middle;
+    }
+
+    .file-label.modified::after {
+      content: 'MODIFIED';
+      margin-left: 0.75rem;
+      font-size: 0.7rem;
+      background: #b08800;
+      color: #fff;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      vertical-align: middle;
+    }
+
+    .diff {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden;
+      font-family: 'Consolas', monospace;
+      font-size: 0.82rem;
+    }
+
+    .diff-line {
+      display: flex;
+      padding: 0.15rem 1rem;
+      gap: 1rem;
+    }
+
+    .diff-line.add    { background: #0d2218; color: #3fb950; }
+    .diff-line.remove { background: #2d1117; color: #f85149; }
+    .diff-line.ctx    { color: #8b949e; }
+    .diff-line.header { background: #1c2128; color: #8b949e; font-style: italic; border-bottom: 1px solid #30363d; }
+
+    .ln { min-width: 2.5rem; text-align: right; color: #484f58; user-select: none; }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+    }
+
+    .card-title { font-size: 0.75rem; color: #8b949e; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .card-value { font-size: 1.4rem; font-weight: 700; color: #e6edf3; }
+    .card-value.green { color: #3fb950; }
+    .card-value.red   { color: #f85149; }
+    .card-value.blue  { color: #58a6ff; }
+
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .bullet-list li {
+      padding: 0.6rem 1rem;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      font-size: 0.875rem;
+    }
+
+    .bullet-list li::before {
+      content: '→ ';
+      color: #58a6ff;
+    }
+
+    code {
+      background: #21262d;
+      border-radius: 4px;
+      padding: 0.1rem 0.35rem;
+      font-family: 'Consolas', monospace;
+      font-size: 0.85em;
+      color: #e6edf3;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Camera Refactor</h1>
+  <p class="subtitle">Extracted camera state and movement into <code>custom/camera.h</code> — June 18 2026</p>
+
+  <div class="summary-grid">
+    <div class="card">
+      <div class="card-title">Files Changed</div>
+      <div class="card-value blue">2</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Lines Added</div>
+      <div class="card-value green">+52</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Lines Removed</div>
+      <div class="card-value red">−22</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Globals Removed</div>
+      <div class="card-value red">−5</div>
+    </div>
+  </div>
+
+  <!-- camera.h -->
+  <div class="section">
+    <div class="section-title">New File</div>
+    <div class="file-label new">custom/camera.h</div>
+    <ul class="bullet-list" style="margin-bottom:1rem">
+      <li>Owns <code>position</code>, <code>front</code>, <code>up</code>, <code>speed</code> as public members</li>
+      <li>Private <code>deltaTime</code> / <code>lastTime</code> — delta time is self-contained, not global</li>
+      <li><code>processInput(GLFWwindow*)</code> — handles WASD movement each frame</li>
+      <li><code>getViewMatrix()</code> — returns <code>glm::lookAt(...)</code> ready to pass to the shader</li>
+    </ul>
+    <div class="diff">
+      <div class="diff-line header"><span>camera.h — full file</span></div>
+      <div class="diff-line add"><span class="ln">1</span><span>#ifndef CAMERA_H</span></div>
+      <div class="diff-line add"><span class="ln">2</span><span>#define CAMERA_H</span></div>
+      <div class="diff-line add"><span class="ln">3</span><span></span></div>
+      <div class="diff-line add"><span class="ln">4</span><span>#include &lt;GLFW/glfw3.h&gt;</span></div>
+      <div class="diff-line add"><span class="ln">5</span><span>#include &lt;glm.hpp&gt;</span></div>
+      <div class="diff-line add"><span class="ln">6</span><span>#include &lt;gtc/matrix_transform.hpp&gt;</span></div>
+      <div class="diff-line add"><span class="ln">7</span><span></span></div>
+      <div class="diff-line add"><span class="ln">8</span><span>class Camera {</span></div>
+      <div class="diff-line add"><span class="ln">9</span><span>public:</span></div>
+      <div class="diff-line add"><span class="ln">10</span><span>&nbsp;&nbsp;&nbsp;&nbsp;glm::vec3 position;</span></div>
+      <div class="diff-line add"><span class="ln">11</span><span>&nbsp;&nbsp;&nbsp;&nbsp;glm::vec3 front;</span></div>
+      <div class="diff-line add"><span class="ln">12</span><span>&nbsp;&nbsp;&nbsp;&nbsp;glm::vec3 up;</span></div>
+      <div class="diff-line add"><span class="ln">13</span><span>&nbsp;&nbsp;&nbsp;&nbsp;float speed;</span></div>
+      <div class="diff-line add"><span class="ln">14</span><span></span></div>
+      <div class="diff-line add"><span class="ln">15</span><span>&nbsp;&nbsp;&nbsp;&nbsp;Camera()</span></div>
+      <div class="diff-line add"><span class="ln">16</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: position(0,0,3), front(0,0,-1), up(0,1,0),</span></div>
+      <div class="diff-line add"><span class="ln">17</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;speed(1.5f), deltaTime(0), lastTime(0)</span></div>
+      <div class="diff-line add"><span class="ln">18</span><span>&nbsp;&nbsp;&nbsp;&nbsp;{}</span></div>
+      <div class="diff-line add"><span class="ln">19</span><span></span></div>
+      <div class="diff-line add"><span class="ln">20</span><span>&nbsp;&nbsp;&nbsp;&nbsp;void processInput(GLFWwindow* window) {</span></div>
+      <div class="diff-line add"><span class="ln">21</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;float currentTime = (float)glfwGetTime();</span></div>
+      <div class="diff-line add"><span class="ln">22</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;deltaTime = currentTime - lastTime;</span></div>
+      <div class="diff-line add"><span class="ln">23</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;lastTime = currentTime;</span></div>
+      <div class="diff-line add"><span class="ln">24</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;float s = speed * deltaTime;</span></div>
+      <div class="diff-line add"><span class="ln">25</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) position += s * front;</span></div>
+      <div class="diff-line add"><span class="ln">26</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) position -= s * front;</span></div>
+      <div class="diff-line add"><span class="ln">27</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) position -= glm::normalize(glm::cross(front, up)) * s;</span></div>
+      <div class="diff-line add"><span class="ln">28</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) position += glm::normalize(glm::cross(front, up)) * s;</span></div>
+      <div class="diff-line add"><span class="ln">29</span><span>&nbsp;&nbsp;&nbsp;&nbsp;}</span></div>
+      <div class="diff-line add"><span class="ln">30</span><span></span></div>
+      <div class="diff-line add"><span class="ln">31</span><span>&nbsp;&nbsp;&nbsp;&nbsp;glm::mat4 getViewMatrix() const {</span></div>
+      <div class="diff-line add"><span class="ln">32</span><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return glm::lookAt(position, position + front, up);</span></div>
+      <div class="diff-line add"><span class="ln">33</span><span>&nbsp;&nbsp;&nbsp;&nbsp;}</span></div>
+      <div class="diff-line add"><span class="ln">34</span><span></span></div>
+      <div class="diff-line add"><span class="ln">35</span><span>private:</span></div>
+      <div class="diff-line add"><span class="ln">36</span><span>&nbsp;&nbsp;&nbsp;&nbsp;float deltaTime;</span></div>
+      <div class="diff-line add"><span class="ln">37</span><span>&nbsp;&nbsp;&nbsp;&nbsp;float lastTime;</span></div>
+      <div class="diff-line add"><span class="ln">38</span><span>};</span></div>
+      <div class="diff-line add"><span class="ln">39</span><span>#endif</span></div>
+    </div>
+  </div>
+
+  <!-- main.cpp -->
+  <div class="section">
+    <div class="section-title">Modified File</div>
+    <div class="file-label modified">learnOpenGL/main.cpp</div>
+    <ul class="bullet-list" style="margin-bottom:1rem">
+      <li>Added <code>#include &lt;camera.h&gt;</code></li>
+      <li>Removed globals: <code>cameraPos</code>, <code>cameraFront</code>, <code>cameraUp</code>, <code>deltaTime</code>, <code>lastTime</code></li>
+      <li><code>Camera camera;</code> declared locally in <code>main()</code></li>
+      <li>Loop now calls <code>camera.processInput(window)</code> and <code>camera.getViewMatrix()</code></li>
+      <li>Removed manual delta-time tracking block from the render loop</li>
+      <li>Removed unused <code>camX</code> / <code>camZ</code> orbit lines</li>
+      <li><code>processInput()</code> now only handles escape and color keys</li>
+    </ul>
+    <div class="diff">
+      <div class="diff-line header"><span>includes</span></div>
+      <div class="diff-line ctx"><span class="ln"></span><span>#include &lt;shader.h&gt;</span></div>
+      <div class="diff-line add"><span class="ln">+</span><span>#include &lt;camera.h&gt;</span></div>
+
+      <div class="diff-line header"><span>removed globals</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>float deltaTime = 0.0f;</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>float lastTime  = 0.0f;</span></div>
+
+      <div class="diff-line header"><span>main() — before render loop</span></div>
+      <div class="diff-line add"><span class="ln">+</span><span>Camera camera;</span></div>
+
+      <div class="diff-line header"><span>render loop — view update</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>float camX = sin(glfwGetTime()) * 3.f;</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>float camZ = cos(glfwGetTime()) * 3.f;</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);</span></div>
+      <div class="diff-line add"><span class="ln">+</span><span>camera.processInput(window);</span></div>
+      <div class="diff-line add"><span class="ln">+</span><span>view = camera.getViewMatrix();</span></div>
+
+      <div class="diff-line header"><span>render loop — removed delta time block</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>float time = glfwGetTime();</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>deltaTime = time - lastTime;</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>lastTime  = time;</span></div>
+
+      <div class="diff-line header"><span>processInput() — removed WASD block</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>const float cameraSpeed = 1.5f * deltaTime;</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>if (W) cameraPos += cameraSpeed * cameraFront;</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>if (S) cameraPos -= cameraSpeed * cameraFront;</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>if (A) cameraPos -= normalize(cross(cameraFront, cameraUp)) * cameraSpeed;</span></div>
+      <div class="diff-line remove"><span class="ln">−</span><span>if (D) cameraPos += normalize(cross(cameraFront, cameraUp)) * cameraSpeed;</span></div>
+    </div>
+  </div>
+
+</body>
+</html>
