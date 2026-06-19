@@ -64,6 +64,7 @@ void main()
 
     // HSV→RGB (saturation=1)
     vec3 c = clamp(abs(fract(hue + vec3(0.0, 2.0/3.0, 1.0/3.0)) * 6.0 - 3.0) - 1.0, 0.0, 1.0);
+    vec3 lightSource = vec3(mx,my,0.f);
     FragColor = vec4(brightness * c, 1.0);
 }
 
