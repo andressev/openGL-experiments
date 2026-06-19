@@ -11,5 +11,5 @@ void main()
     p -= 0.5f;
     vec3 lightSource = vec3(1.0f);
     float l = clamp(dot(vec3(p, 0.f), lightSource),0.1f,1.0f);
-    FragColor = vec4(l*vec3(0.f, 1.f, 1.f), 1.0f);
+    FragColor = vec4(vec3(0.f, 1.f, 1.f), 1.0f);
 }

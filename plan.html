@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenGL Project Structure Plan</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f0f13; color: #e0e0e0; font-family: 'Segoe UI', system-ui, sans-serif; padding: 2rem; line-height: 1.6; }
+  h1 { color: #a78bfa; font-size: 1.8rem; margin-bottom: 0.25rem; }
+  h2 { color: #7dd3fc; font-size: 1.1rem; margin: 2rem 0 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
+  h3 { color: #f0abfc; font-size: 0.95rem; margin: 1rem 0 0.4rem; }
+  .subtitle { color: #6b7280; font-size: 0.9rem; margin-bottom: 2.5rem; }
+  .card { background: #1a1a24; border: 1px solid #2a2a3a; border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 1rem; }
+  .card.highlight { border-color: #7c3aed44; background: #1e1a2e; }
+  pre { background: #0a0a10; border: 1px solid #2a2a3a; border-radius: 6px; padding: 1rem; overflow-x: auto; font-size: 0.82rem; line-height: 1.7; }
+  code { font-family: 'Cascadia Code', 'Fira Code', Consolas, monospace; }
+  .kw  { color: #c084fc; }
+  .ty  { color: #67e8f9; }
+  .cm  { color: #4b5563; font-style: italic; }
+  .st  { color: #86efac; }
+  .nm  { color: #fbbf24; }
+  .tag { display: inline-block; font-size: 0.7rem; padding: 0.1rem 0.5rem; border-radius: 99px; margin-left: 0.5rem; vertical-align: middle; font-weight: 600; }
+  .now   { background: #14532d; color: #4ade80; }
+  .next  { background: #1e3a5f; color: #60a5fa; }
+  .later { background: #3b1f2b; color: #f9a8d4; }
+  .tree { font-family: 'Cascadia Code', Consolas, monospace; font-size: 0.85rem; line-height: 2; color: #9ca3af; }
+  .tree .hl { color: #a78bfa; }
+  .tree .new { color: #4ade80; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .pain { color: #f87171; font-size: 0.85rem; }
+  .fix  { color: #4ade80; font-size: 0.85rem; }
+  p { font-size: 0.9rem; color: #9ca3af; margin-bottom: 0.5rem; }
+  ul { padding-left: 1.25rem; }
+  ul li { font-size: 0.875rem; color: #9ca3af; margin-bottom: 0.3rem; }
+  hr { border: none; border-top: 1px solid #2a2a3a; margin: 2.5rem 0; }
+</style>
+</head>
+<body>
+
+<h1>OpenGL Project — Structure Plan</h1>
+<p class="subtitle">Keeping it tidy as shaders, objects, and experiments grow</p>
+
+<hr>
+
+<!-- CURRENT PAIN POINTS -->
+<h2>Current Pain Points</h2>
+<div class="row">
+  <div class="card">
+    <h3 class="pain">What gets messy fast</h3>
+    <ul>
+      <li>Raw VAO/VBO/EBO handles loose in <code>main()</code></li>
+      <li>All shaders flat in one folder</li>
+      <li>Uniform setting scattered everywhere in the render loop</li>
+      <li>No separation between "setup" and "per-frame" logic</li>
+      <li>Adding a new object = copy-pasting 20 lines of buffer setup</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3 class="fix">What to do instead</h3>
+    <ul>
+      <li>Wrap GPU resources in a <code>Mesh</code> class</li>
+      <li>One shader subfolder per experiment/scene</li>
+      <li>Render loop just binds + draws, doesn't manage state</li>
+      <li>Later: hot-reload shaders from file without recompiling C++</li>
+    </ul>
+  </div>
+</div>
+
+<hr>
+
+<!-- FOLDER STRUCTURE -->
+<h2>Folder Structure</h2>
+<div class="card">
+<div class="tree">
+OpenGl_experiments/<br>
+├── custom/<br>
+│   ├── <span class="hl">shader.h</span>           <span style="color:#4b5563">← already exists</span><br>
+│   ├── <span class="hl">camera.h</span>           <span style="color:#4b5563">← already exists</span><br>
+│   ├── <span class="new">mesh.h</span>             <span style="color:#4ade80">← new: owns VAO/VBO/EBO</span><br>
+│   └── shapes.h<br>
+├── learnOpenGL/<br>
+│   ├── main.cpp<br>
+│   └── shaders/<br>
+│       ├── <span class="new">riemann/</span>       <span style="color:#4ade80">← new: sphere + complex functions</span><br>
+│       │   ├── vertex.glsl<br>
+│       │   └── fragment.glsl<br>
+│       ├── <span class="new">flat/</span>          <span style="color:#4ade80">← new: 2D / plane experiments</span><br>
+│       │   ├── vertex.glsl<br>
+│       │   └── fragment.glsl<br>
+│       └── <span class="new">shared/</span>        <span style="color:#4ade80">← new: complex math library glsl</span><br>
+│           └── complex.glsl<br>
+└── plan.html
+</div>
+</div>
+
+<hr>
+
+<!-- MESH CLASS -->
+<h2>Step 1 — Mesh Class <span class="tag now">do now</span></h2>
+<p>Wraps VAO, VBO, EBO. Construction uploads data to GPU. Destruction cleans up. You never touch raw handles in <code>main</code> again.</p>
+
+<div class="card highlight">
+<pre><code><span class="kw">struct</span> <span class="ty">Mesh</span> {
+    <span class="ty">unsigned int</span> VAO, VBO, EBO;
+    <span class="ty">int</span> indexCount;
+
+    <span class="cm">// stride: number of floats per vertex (e.g. 8 for pos+normal+uv)</span>
+    <span class="ty">Mesh</span>(<span class="ty">float</span>* verts, <span class="ty">int</span> vertBytes,
+         <span class="ty">unsigned int</span>* indices, <span class="ty">int</span> idxCount,
+         <span class="ty">int</span> stride)
+    {
+        <span class="nm">this</span>->indexCount = idxCount;
+        glGenVertexArrays(<span class="nm">1</span>, &VAO);
+        glGenBuffers(<span class="nm">1</span>, &VBO);
+        glGenBuffers(<span class="nm">1</span>, &EBO);
+
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, vertBytes, verts, GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                     idxCount * <span class="kw">sizeof</span>(<span class="ty">unsigned int</span>), indices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(<span class="nm">0</span>, <span class="nm">3</span>, GL_FLOAT, GL_FALSE,
+                              stride * <span class="kw">sizeof</span>(<span class="ty">float</span>), (<span class="ty">void</span>*)<span class="nm">0</span>);
+        glEnableVertexAttribArray(<span class="nm">0</span>);
+    }
+
+    <span class="kw">void</span> <span class="nm">draw</span>() <span class="kw">const</span> {
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, <span class="nm">0</span>);
+    }
+
+    ~<span class="ty">Mesh</span>() {
+        glDeleteVertexArrays(<span class="nm">1</span>, &VAO);
+        glDeleteBuffers(<span class="nm">1</span>, &VBO);
+        glDeleteBuffers(<span class="nm">1</span>, &EBO);
+    }
+
+    <span class="cm">// non-copyable — GPU resources shouldn't be duplicated by accident</span>
+    <span class="ty">Mesh</span>(<span class="kw">const</span> <span class="ty">Mesh</span>&) = <span class="kw">delete</span>;
+    <span class="ty">Mesh</span>& <span class="kw">operator</span>=(<span class="kw">const</span> <span class="ty">Mesh</span>&) = <span class="kw">delete</span>;
+};</code></pre>
+</div>
+
+<p>Your render loop then looks like:</p>
+<div class="card">
+<pre><code>riemannShader.use();
+riemannShader.setMat4(<span class="st">"model"</span>, modelSphere);
+riemannShader.setVec2(<span class="st">"mouse"</span>, mx, my);
+sphere.draw();
+
+flatShader.use();
+flatShader.setMat4(<span class="st">"model"</span>, modelPlane);
+plane.draw();</code></pre>
+</div>
+
+<hr>
+
+<!-- SHADER ORGANIZATION -->
+<h2>Step 2 — Shared GLSL Library <span class="tag now">do now</span></h2>
+<p>
+  Your complex math functions (<code>cMul</code>, <code>cDiv</code>, <code>cExp</code>…) are going to be useful in every fragment shader you write.
+  Instead of copy-pasting them, pull them into <code>shaders/shared/complex.glsl</code> and
+  <strong>#include</strong> them at load time — your <code>Shader</code> class can do a simple string substitution
+  when it sees <code>#include "shared/complex.glsl"</code>.
+</p>
+<div class="card">
+<pre><code><span class="cm">// In Shader constructor, before glShaderSource:</span>
+<span class="cm">// replace lines starting with #include "X" with the contents of file X</span>
+std::string source = readFile(path);
+source = resolveIncludes(source, shaderDir); <span class="cm">// ~20 lines</span></code></pre>
+</div>
+
+<hr>
+
+<!-- HOT RELOAD -->
+<h2>Step 3 — Shader Hot-Reload <span class="tag next">next</span></h2>
+<p>
+  Instead of recompiling C++ every time you change a function, watch the <code>.glsl</code> files for changes and
+  recompile the shader program on the fly. This also gives you a poor-man's "function input" —
+  just edit the file, save, and the sphere updates in under a second.
+</p>
+<div class="card">
+<pre><code><span class="cm">// In render loop:</span>
+<span class="kw">if</span> (fileChanged(<span class="st">"shaders/riemann/fragment.glsl"</span>)) {
+    riemannShader.reload(); <span class="cm">// recompile + relink</span>
+}
+</code></pre>
+</div>
+<p>
+  <code>fileChanged</code> just compares <code>std::filesystem::last_write_time</code> —
+  one line per file per frame, negligible cost.
+</p>
+
+<hr>
+
+<!-- LATER -->
+<h2>Later (when you actually feel the pain) <span class="tag later">later</span></h2>
+<div class="card">
+  <h3>Scene list</h3>
+  <p>When you have 5+ objects, a <code>std::vector&lt;SceneObject&gt;</code> where each holds a Mesh + Shader pointer + model matrix,
+  and the render loop just iterates it, is the next natural step.</p>
+</div>
+<div class="card">
+  <h3>Framebuffers / render targets</h3>
+  <p>When you want post-processing (bloom on the sphere, render-to-texture) you'll need FBOs.
+  Add them only then.</p>
+</div>
+<div class="card">
+  <h3>UBO / uniform blocks</h3>
+  <p>When you have many shaders all needing the same camera matrices,
+  a Uniform Buffer Object lets you set them once and all shaders see them.
+  Not worth it until you have 3+ shaders.</p>
+</div>
+
+<hr>
+<p style="color:#374151; font-size:0.8rem; text-align:center">The rule: only add abstraction when you feel the pain of not having it.</p>
+
+</body>
+</html>

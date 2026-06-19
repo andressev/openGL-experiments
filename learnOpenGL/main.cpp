@@ -48,19 +48,21 @@ int main()
         return -1;
     }
 
+    glEnable(GL_DEPTH_TEST);
+
     glViewport(0,0,SRC_WIDTH,SRC_HEIGHT);
 
 
-    Shader shader(SHADER_DIR"vertex.glsl", SHADER_DIR"fragment.glsl");
+    Shader shader(SHADER_DIR"vertex.glsl", SHADER_DIR"complexFragment.glsl");
     shaderPtr = &shader;
     shader.use();
     int width, height;
     glfwGetFramebufferSize(window,&width,&height);
     shader.setVec2("resolution", float(width),float(height));
 
-    int sector = 20;
-    int stack = 20;
-    float radius = 0.5f;
+    int sector = 100;
+    int stack = 100;
+    float radius = 2.5f;
     
     int vertexCount;
     float* vertices = Shapes::sphereVertices(sector, stack,radius,vertexCount);
@@ -116,10 +118,12 @@ int main()
 
 
     Camera camera;
+    camera.mode = Camera::CameraMode::Orbit;
+    camera.orbitCenter = glm::vec3(0.f,0.f,-1.f);
     
 
     glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
-    glm::mat4 view= glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
+    glm::mat4 view = glm::mat4(1.0f);
     model = glm::rotate(model, glm::radians(-80.f), glm::vec3(1.f,0.0f,.0f));
     glm::mat4 projection=glm::perspective(glm::radians(75.0f), (float)SRC_WIDTH / (float)SRC_HEIGHT, 0.1f, 100.0f);
     
@@ -141,11 +145,16 @@ int main()
 
         glClearColor(color.r, color.g, color.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         shader.use();
 
         
         camera.processInput(window);
         view = camera.getViewMatrix();
+
+        double mx, my;
+        glfwGetCursorPos(window, &mx, &my);
+        shader.setVec2("mouse", float(mx) / SRC_WIDTH, 1.0f - float(my) / SRC_HEIGHT);
 
         shader.setMat4("view",view);
         
@@ -162,9 +171,11 @@ int main()
         shader.setMat4("model", modelSphere);
         glDrawElements(GL_TRIANGLES,indicesCount, GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
 
-        glBindVertexArray(VAO2);
-        shader.setMat4("model", glm::scale(model, glm::vec3(3.f)));
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
+
+        //
+        //glBindVertexArray(VAO2);
+        //shader.setMat4("model", glm::scale(model, glm::vec3(30.f)));
+        //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
 
         
 

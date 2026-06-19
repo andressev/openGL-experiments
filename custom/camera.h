@@ -11,9 +11,8 @@ public:
     glm::vec3 position;
     glm::vec3 front;
     glm::vec3 up;
-    float speed;
-
     glm::vec3 orbitCenter;
+    float speed;
     enum class CameraMode { Orbit, Free };
     CameraMode mode;
 
@@ -21,11 +20,13 @@ public:
         : position(0.0f, 0.0f, 3.0f),
           front(0.0f, 0.0f, -1.0f),
           up(0.0f, 1.0f, 0.0f),
+          orbitCenter(0.f, 0.f,0.f),
           speed(1.5f),
           deltaTime(0.0f),
           lastTime(0.0f),
           mode(CameraMode::Free),
-          orbitAngle(0.0f),
+          orbitTheta(0.0f),
+          orbitPhi(glm::half_pi<float>()),
           orbitRadius(3.0f)
     {}
 
@@ -57,12 +58,26 @@ public:
 
     void orbitMode(GLFWwindow* window, float cameraSpeed) {
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            orbitAngle -= cameraSpeed;
+            orbitTheta -= cameraSpeed;
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            orbitAngle += cameraSpeed;
+            orbitTheta += cameraSpeed;
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            orbitPhi -= cameraSpeed;
+        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            orbitPhi += cameraSpeed;
+        if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+            orbitRadius += cameraSpeed;
+        if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+            orbitRadius = glm::max(orbitRadius - cameraSpeed, 0.1f);
 
-        position.x = orbitCenter.x + orbitRadius * sin(orbitAngle);
-        position.z = orbitCenter.z + orbitRadius * cos(orbitAngle);
+        // clamp phi away from poles to avoid lookAt singularity
+        const float phiMin = 0.05f;
+        const float phiMax = glm::pi<float>() - 0.05f;
+        orbitPhi = glm::clamp(orbitPhi, phiMin, phiMax);
+
+        position.x = orbitCenter.x + orbitRadius * sin(orbitPhi) * sin(orbitTheta);
+        position.y = orbitCenter.y + orbitRadius * cos(orbitPhi);
+        position.z = orbitCenter.z + orbitRadius * sin(orbitPhi) * cos(orbitTheta);
         front = glm::normalize(orbitCenter - position);
     }
 
@@ -73,7 +88,8 @@ public:
 private:
     float deltaTime;
     float lastTime;
-    float orbitAngle;
+    float orbitTheta;
+    float orbitPhi;
     float orbitRadius;
 };
 

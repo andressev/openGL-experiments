@@ -8,6 +8,7 @@ uniform mat4 view;
 uniform mat4 projection;
 
 out vec3 ourColor;
+out vec3 localPos;
 
 
 void main()
@@ -15,6 +16,7 @@ void main()
     vec4 pos=projection*view*model*vec4(aPos,1.0f);
     
     gl_Position = pos;
+    localPos = aPos;
     
     ourColor = pos.xyz;
 }
