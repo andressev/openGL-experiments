@@ -88,23 +88,28 @@ int main()
     glEnableVertexAttribArray(0); //enables location=0 for the vertex shader 
 
 
-    //VAO 2 plane
+    //VAO 2 axis
+    glLineWidth(5.0f);
+
     unsigned int VBO2, VAO2, EBO2;
     glGenVertexArrays(1, &VAO2);
     glGenBuffers(1, &VBO2);
     glGenBuffers(1, &EBO2);
 
-    float* planeVertices = Shapes::planeVertices();
-    unsigned int* planeIndices = Shapes::planeIndices();
+    float* axisVertices = Shapes::axisVertices();
+    unsigned int* axisIndices = Shapes::axisIndices();
+
     
-    glBindVertexArray(VAO2); //we bind the vao1
-    glBindBuffer(GL_ARRAY_BUFFER, VBO2);
-    glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), planeVertices, GL_STATIC_DRAW);
+    glBindVertexArray(VAO2); //we bind the vao2
+    glBindBuffer(GL_ARRAY_BUFFER, VBO2);    
+    glBufferData(GL_ARRAY_BUFFER, 3*6*sizeof(float), axisVertices, GL_STATIC_DRAW);
     
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO2);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), planeIndices, GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), axisIndices, GL_STATIC_DRAW);
+    
     
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    
     glEnableVertexAttribArray(0); //enables location=0 for the vertex shader 
 
     
@@ -119,16 +124,14 @@ int main()
 
     Camera camera;
     camera.mode = Camera::CameraMode::Orbit;
-    camera.orbitCenter = glm::vec3(0.f,0.f,-1.f);
     
 
     glm::mat4 model = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
     glm::mat4 view = glm::mat4(1.0f);
-    model = glm::rotate(model, glm::radians(-80.f), glm::vec3(1.f,0.0f,.0f));
+    model = glm::rotate(model, glm::radians(-90.f), glm::vec3(1.f,0.0f,.0f));
     glm::mat4 projection=glm::perspective(glm::radians(75.0f), (float)SRC_WIDTH / (float)SRC_HEIGHT, 0.1f, 100.0f);
     
-    //shpere
-    glm::mat4 modelSphere = glm::mat4(1.0f);
+   
     
     shader.use();
     shader.setMat4("projection", projection);
@@ -166,16 +169,14 @@ int main()
         projection=glm::perspective(glm::radians(55.f), (float)SRC_WIDTH / (float)SRC_HEIGHT, 0.1f, 100.0f);
         shader.setMat4("projection", projection);
 
-
-        modelSphere = glm::translate(model,glm::vec3(0.f,1.f,0.f));
-        shader.setMat4("model", modelSphere);
+        shader.setMat4("model", model);
         glDrawElements(GL_TRIANGLES,indicesCount, GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
 
 
-        //
-        //glBindVertexArray(VAO2);
-        //shader.setMat4("model", glm::scale(model, glm::vec3(30.f)));
-        //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); //the amount of vertices drawn starts at cero finishes at n
+        
+        glBindVertexArray(VAO2);
+        shader.setMat4("model", glm::scale(model, glm::vec3(1.f)));
+        glDrawElements(GL_LINES, 6, GL_UNSIGNED_INT,0);//the amount of vertices drawn starts at cero finishes at n
 
         
 

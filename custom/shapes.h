@@ -90,6 +90,26 @@ public:
         std::copy(temp.begin(), temp.end(), arr);
         return arr;
     }
+    static float* axisVertices() {
+        static float vertices[] = {
+             500.f,  0.0f, 0.0f,
+             -500.f, 0.0f, 0.0f,
+             0.f, 500.f, 0.0f,
+             0.f,  -500.f, 0.0f,
+             0.f,  0.f, 500.0f,
+             0.f,  0.f, -500.0f,
+
+        };
+        return vertices;
+    }
+    static unsigned int* axisIndices() {
+        static unsigned int indices[] = {
+            0,1,
+            2,3,
+            4,5            
+        };
+        return indices;
+    }
     static float* planeVertices() {
         static float vertices[] = {
              0.5f,  0.5f, 0.0f,
@@ -161,4 +181,5 @@ public:
         };
     }
 };
+
 #endif
